@@ -1,0 +1,196 @@
+#include <a_samp>
+
+#pragma tabsize 0
+
+//defino los dialogos
+#define DIALOG_BANCO 1
+#define DIALOG_CONSULTAR 2
+#define DIALOG_DEPOSITO 3
+#define DIALOG_RETIRO 4
+
+//varible: el dinero total que tiene el jugador en el banco
+new dinero_banco = 2000;
+
+public OnPlayerCommandText(playerid, cmdtext[])
+{
+	new idx;
+	new cmd[256];
+	
+	cmd = strtok(cmdtext, idx);
+
+	if(strcmp(cmd, "/yadayada", true) == 0) {
+    	return 1;
+	}
+	//comando para entrar al interior del banco
+	if(strcmp(cmd,"/entrar",true) == 0)
+	{
+		if(IsPlayerInRangeOfPoint(playerid,2,1289.7186,270.5675,19.5547))
+		{
+			SetPlayerInterior(playerid,3);
+			SetPlayerPos(playerid,833.8190,7.4180,1004.1797);
+		}
+		return 1;
+	}
+
+	//comando para salir del interior del banco
+	if(strcmp(cmd,"/salir",true) == 0)
+	{
+		if(IsPlayerInRangeOfPoint(playerid,2,833.8190,7.4180,1004.1797))
+		{
+			SetPlayerInterior(playerid,0);
+			SetPlayerPos(playerid,1289.7186,270.5675,19.5547);
+		}
+		return 1;
+	}
+
+	//comando para abrir un cuadro de dialogo con tres listas
+	if(strcmp(cmd,"/oper",true) == 0)
+	{
+		if(IsPlayerInRangeOfPoint(playerid,1.5,833.6001,3.4074,1004.1797)||IsPlayerInRangeOfPoint(playerid,1.5,830.6207,-0.2442,1004.1797))
+		{
+			ShowPlayerDialog(playerid,DIALOG_BANCO,DIALOG_STYLE_LIST,"Operaciones","Consultar saldo\nDespositar\nRetirar","Aceptar","Cancelar");
+		}
+		return 1;
+	}
+	return 0;
+}
+
+public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
+{
+	//interacción con el consultar saldo/depositar/retirar
+	if(dialogid == DIALOG_BANCO)
+	{
+		if(response)
+		{
+			switch(listitem)
+			{
+				case 0:
+				{
+					new consultar_saldo[100];
+					format(consultar_saldo,sizeof(consultar_saldo),"Dinero en total: %i",dinero_banco);
+					ShowPlayerDialog(playerid,DIALOG_CONSULTAR,DIALOG_STYLE_MSGBOX,"Consultar saldo",consultar_saldo,"Aceptar","");
+				}
+				case 1:
+				{
+					ShowPlayerDialog(playerid,DIALOG_DEPOSITO,DIALOG_STYLE_INPUT,"Depositar","Ingrese la cantidad que depositara","Depositar","Cancelar");
+				}
+				case 2:
+				{
+					ShowPlayerDialog(playerid,DIALOG_RETIRO,DIALOG_STYLE_INPUT,"Retirar","Ingrese la cantidad que retirara","Retirar","Cancelar");
+				}
+			}
+		}
+		else
+		{
+			SendClientMessage(playerid,-1,"Operaciones Cancelado");
+		}
+	}
+
+	//interaccion al responder con la opción "depositar"
+	if(dialogid == DIALOG_DEPOSITO)
+	{
+		if(response)
+		{
+			//el valor ingresado lo convierto a un número entero
+			new cantidad_dinero = strval(inputtext);
+			if(cantidad_dinero > 0 && cantidad_dinero <= GetPlayerMoney(playerid))
+			{
+				//suma el dinero banco más la cantidad ingresada
+				dinero_banco += cantidad_dinero;
+				//resta el dinero del jugador con la cantidad ingresada
+				GivePlayerMoney(playerid,-cantidad_dinero);
+			}
+			else
+			{
+				SendClientMessage(playerid,-1,"No tienes esa cantidad de dinero");
+			}
+		}
+		else
+		{
+			SendClientMessage(playerid,-1,"Deposito cancelado");
+		}
+	}
+
+	//intercción al responder con la opción "retirar"
+	if(dialogid == DIALOG_RETIRO)
+	{
+		if(response)
+		{
+			//el valor ingresado lo convierto a un número entero
+			new cantidad_dinero = strval(inputtext);
+			if(cantidad_dinero > 0 && cantidad_dinero <= dinero_banco)
+			{
+				//restar el dinero del banco por la cantidad ingresada
+				dinero_banco -= cantidad_dinero;
+				//suma el valor de la cantidad ingreada al jugador
+				GivePlayerMoney(playerid,cantidad_dinero);
+			}
+			else
+			{
+				SendClientMessage(playerid,-1,"No tienes esa cantidad de dinero");
+			}
+		}
+		else
+		{
+			SendClientMessage(playerid,-1,"Retiro cancelado");
+		}
+	}
+	return 0;
+}
+
+public OnPlayerSpawn(playerid)
+{
+	SetPlayerInterior(playerid,0);
+	TogglePlayerClock(playerid,0);
+	//el jugador obtiner 2000 dólares al spawnear
+	GivePlayerMoney(playerid,2000);
+	return 1;
+}
+SetupPlayerForClassSelection(playerid)
+{
+ 	SetPlayerInterior(playerid,14);
+	SetPlayerPos(playerid,258.4893,-41.4008,1002.0234);
+	SetPlayerFacingAngle(playerid, 270.0);
+	SetPlayerCameraPos(playerid,256.0815,-43.0475,1004.0234);
+	SetPlayerCameraLookAt(playerid,258.4893,-41.4008,1002.0234);
+}
+
+public OnPlayerRequestClass(playerid, classid)
+{
+	SetupPlayerForClassSelection(playerid);
+	return 1;
+}
+
+public OnGameModeInit()
+{
+	SetGameModeText("Bare Script");
+	ShowPlayerMarkers(1);
+	ShowNameTags(1);
+	AllowAdminTeleport(1);
+	//elimina la flechas de las entradas y salidas de interiores
+	DisableInteriorEnterExits();
+
+	AddPlayerClass(265,1302.7102,264.3139,19.5547,270.1425,0,0,0,0,-1,-1);
+	CreateVehicle(420, 2029.4692, 1340.7361, 10.4340, 0.0000, -1, -1, 100);
+
+	return 1;
+}
+
+strtok(const string[], &index)
+{
+	new length = strlen(string);
+	while ((index < length) && (string[index] <= ' '))
+	{
+		index++;
+	}
+
+	new offset = index;
+	new result[20];
+	while ((index < length) && (string[index] > ' ') && ((index - offset) < (sizeof(result) - 1)))
+	{
+		result[index - offset] = string[index];
+		index++;
+	}
+	result[index - offset] = EOS;
+	return result;
+}
